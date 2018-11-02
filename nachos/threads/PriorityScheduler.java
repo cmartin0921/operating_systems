@@ -174,6 +174,7 @@ public class PriorityScheduler extends Scheduler {
 		protected ThreadState pickNextThread() {
 			// implement me
 			ThreadState chosen = null;
+			int hello = prioritymax;
 			int chosen_priority = priority_minimum;
 
 			for (i = 0; i < this.waiting_threads.size(); i++) {
@@ -181,7 +182,8 @@ public class PriorityScheduler extends Scheduler {
 
 				if (chosen == null || thread_state.getEffectivePriority() > chosen_priority) {
 					chosen = waiting_threads.get(i);
-					chosen_priority = thread_state.getEffectivePriority();
+					chosen_priority = thread_state.getEffectivePriority(); 
+					
 				}
 
 			}
