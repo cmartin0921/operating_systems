@@ -277,6 +277,39 @@ public class KThread {
 
 	Lib.assertTrue(this != currentThread);
 
+	//Disable interrupts
+	boolean interrupt = Machine.interrupt().disable();
+
+	//
+	if (this.status == statusNew || this.status != statusRunning)
+	{
+		Machine.interrupt().restore(interrupt);
+		return;
+	}
+	
+	//If the join waiting queue is empty
+	if (joinWaitQueue == null)
+	{
+		//Initialize join waiting queue
+		joinWaitQueue = ThreadedKernel.scheduler.newThreadQueue(true);
+		joinWaitQueue.acquire(this);
+	}
+		
+	//If this thread is not the same as currentThread and this thread is not finished
+//(this.status == statusRunning || this.status == statusBlocked || this.status == statusNew)
+	
+
+	while (currentThread != this && this.status != statusFinished )
+	{
+		//Add the current thread to the join waiting queue indicating that it is waiting for access
+		joinWaitQueue.waitForAccess(currentThread);
+		//Put the current thread to sleep;
+		currentThread.sleep();
+	}
+	
+	//Restore interrupts
+	Machine.interrupt().restore(interrupt);
+	
     }
 
     /**
@@ -444,4 +477,7 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+    
+    //Variables and ojbects created for project1
+    private ThreadQueue joinWaitQueue;
 }
