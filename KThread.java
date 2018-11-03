@@ -188,6 +188,11 @@ public class KThread {
 
 	Machine.autoGrader().finishingCurrentThread();
 
+	if (currentThread.joined)
+	{
+		currentThread.joinWaitQueue.nextThread().ready();
+	}
+
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
 
@@ -279,13 +284,6 @@ public class KThread {
 
 	//Disable interrupts
 	boolean interrupt = Machine.interrupt().disable();
-
-	//
-	if (this.status == statusNew || this.status != statusRunning)
-	{
-		Machine.interrupt().restore(interrupt);
-		return;
-	}
 	
 	//If the join waiting queue is empty
 	if (joinWaitQueue == null)
@@ -296,15 +294,15 @@ public class KThread {
 	}
 		
 	//If this thread is not the same as currentThread and this thread is not finished
-//(this.status == statusRunning || this.status == statusBlocked || this.status == statusNew)
-	
-
-	while (currentThread != this && this.status != statusFinished )
+	if (currentThread != this && this.status != statusFinished)
 	{
+		//Set thread joined to true
+		this.joined = true;
 		//Add the current thread to the join waiting queue indicating that it is waiting for access
 		joinWaitQueue.waitForAccess(currentThread);
 		//Put the current thread to sleep;
-		currentThread.sleep();
+		KThread.sleep();
+
 	}
 	
 	//Restore interrupts
@@ -480,4 +478,5 @@ public class KThread {
     
     //Variables and ojbects created for project1
     private ThreadQueue joinWaitQueue;
+    private boolean joined;
 }

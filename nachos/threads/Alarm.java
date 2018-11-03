@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.PriorityQueue;
+
 import nachos.machine.*;
 
 /**
@@ -27,7 +29,27 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
+
+    	//If the queue is empty just return
+    	if(waitUntilQueue.isEmpty()) {
+    		return;
+    	}
+    	//If the first value of the queue, ie the value that has the shortest wait time
+    	//has a time greater than or equal to the Machine's time don't do anything and return
+    	if(waitUntilQueue.peek().getTime()>=Machine.timer().getTime()) {
+    		return;
+    	}
+    	//Disable interrupts 
+    	boolean intStatus=Machine.interrupt().disable();
+    	//If wait queue is not empty and the first threads time is less than the machine's time
+    	while(!waitUntilQueue.isEmpty() && waitUntilQueue.peek().getTime() <= Machine.timer().getTime()) {
+    		//Remove the first element of the wait priority queue and put its thread on the ready queue
+    		waitUntilQueue.poll().getThread().ready();
+    	}
+    	//Restore interrupts
+    	Machine.interrupt().restore(intStatus);
+    	//Yield the current thread
+    	KThread.currentThread().yield();
     }
 
     /**
@@ -45,9 +67,19 @@ public class Alarm {
      * @see	nachos.machine.Timer#getTime()
      */
     public void waitUntil(long x) {
-	// for now, cheat just to get something working (busy waiting is bad)
-	long wakeTime = Machine.timer().getTime() + x;
-	while (wakeTime > Machine.timer().getTime())
-	    KThread.yield();
+    	long wakeTime = Machine.timer().getTime() + x;
+    	//Disable interrupts
+    	boolean intStatus = Machine.interrupt().disable();
+    	//Make an instance of the waitThread class, pass the currentThread and the time we want it to wait until it wakes
+    	waitThread wakeLater = new waitThread(KThread.currentThread(),wakeTime);
+    	//Add it to the Priority Queue that prioritizes based on the the wakeTime
+    	waitUntilQueue.add(wakeLater);
+    	//Put the thread to sleep
+    	KThread.currentThread().sleep();
+    	//Restore Interrupts
+		Machine.interrupt().restore(intStatus);
     }
+    //Declare the priority queue for threads to wait for their time to wake up again
+    PriorityQueue<waitThread> waitUntilQueue = new PriorityQueue<waitThread>();
+	
 }
