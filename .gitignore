@@ -1,2 +1,4 @@
 #Starting Directory
 nachos-java.tar.gz
+
+*.class
